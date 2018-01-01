@@ -33,7 +33,6 @@ ELSE()
     SET(SRC_CONTROL src/control_non.cpp)
 ENDIF()
 
-
 set(SOURCE_FILES
         src/main.cpp
         src/scenes/text_drawer.cpp

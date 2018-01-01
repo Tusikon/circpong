@@ -24,10 +24,13 @@ namespace pong{
                 switch (event.key.keysym.sym) {
                     // Pressing ESC exits from the game.
                     case SDLK_ESCAPE:
-                        r |=input_t::quit;
+                        r |= input_t::quit;
                         break;
                     case SDLK_SPACE:
-                        r |= (input_t::p1_press | input_t::p2_press);
+                        r |= input_t::p1_press;
+                        break;
+                    case SDLK_RETURN:
+                        r |= input_t::p2_press;
                         break;
                     case SDLK_UP:
                         r |= input_t::screen_up;

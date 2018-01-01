@@ -53,8 +53,12 @@ namespace pong {
         return input_t::idle != (val & flag);
     }
 
-    inline bool input_is_pause(const input_t val) {
-        return input_is_set(val, input_t::p1_press | input_t::p2_press);
+    inline bool input_is_pause_p1(const input_t val) {
+        return input_is_set(val, input_t::p1_press);
+    }
+
+    inline bool input_is_pause_p2(const input_t val) {
+        return input_is_set(val, input_t::p2_press);
     }
 
     inline bool input_all_pressed(const input_t val) {

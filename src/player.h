@@ -14,6 +14,7 @@ namespace pong {
         // how many angles are change on player movement (0-360)
         float angular_speed;
         int score;
+        bool active;
         std::string name;
         std::pair<float,float> boundaries;
 

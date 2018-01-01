@@ -64,13 +64,14 @@ namespace pong {
 
         high_resolution_clock::time_point game_start_time;
         high_resolution_clock::time_point last_input_time;
+        high_resolution_clock::time_point next_screen_time;
+
 
         player p1;
         player p2;
 
         player* winner;         //winner of current round
         player* curr_winner;    //winner of entire game
-        int active_player;
         int pc_cooldown;
         // After detecting a collision we start this timer that is reduced every frame
         // in which collision detection is disabled so we won't have "collision loop"
@@ -81,7 +82,7 @@ namespace pong {
         explicit state(const config& conf) :
             _conf { conf },
             is_welcome { true },
-            is_2_player { true },
+            is_2_player { false },
             is_instructions { false },
             is_game_start { false },
             is_paused { true  },
@@ -91,7 +92,6 @@ namespace pong {
             p1("Player 1", 90),
             p2("Player 2", 90+180),
             curr_winner {nullptr},
-            active_player {1},
             winner {nullptr},
             pc_cooldown {0},
             collision_cooldown { constants::collision_cooldown_max_val },
@@ -99,6 +99,7 @@ namespace pong {
             uni {-180,180},
             game_start_time { high_resolution_clock::now() },
             last_input_time { high_resolution_clock::now() },
+            next_screen_time { high_resolution_clock::time_point::max() },
             start_game_count_down { 0 }
             {
                 reset_ball();

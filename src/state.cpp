@@ -7,6 +7,8 @@
 namespace pong {
     void state::update(input_t event) {
         auto now = high_resolution_clock::now();
+        auto p1_pressed = input_is_pause_p1(event);
+        auto p2_pressed = input_is_pause_p2(event);
         if (event != input_t::idle)
             last_input_time = now;
         else {
@@ -17,13 +19,14 @@ namespace pong {
                 is_instructions = false;
                 is_paused = true;
                 is_game_start = false;
-                is_2_player = true;
+                is_2_player = false;
                 is_player_pressed_paused = false;
 
                 is_game_over = false;
                 curr_winner = nullptr;
-                active_player = 1;
-                pc_cooldown = 10;
+                pc_cooldown = 4;
+                p1.active = false;
+                p2.active = false;
                 p1.score = 0;
                 p2.score = 0;
                 p1.angle_ = 90;
@@ -36,38 +39,69 @@ namespace pong {
         is_goal = false;
 
         if (is_welcome) {
-            if (input_is_pause(event)) {
+            if (p1_pressed || p2_pressed ) {
+                is_welcome = true;
+                is_instructions = false;
+                is_paused = true;
+                is_game_start = false;
+                p1.active |= p1_pressed;
+                p2.active |= p2_pressed;
+                is_2_player = p1.active && p2.active;
+                next_screen_time = now + std::chrono::seconds(1);
+            }
+            else if (next_screen_time < now) {
                 is_welcome = false;
                 is_instructions = true;
                 is_paused = true;
                 is_game_start = false;
+                p1.active |= p1_pressed;
+                p2.active |= p2_pressed;
+                is_2_player = p1.active && p2.active;
+                next_screen_time = high_resolution_clock::time_point::max();
             }
-
             return;
         }
 
         if (is_instructions) {
-            if (event == input_t::idle) {
+            if ((event == input_t::idle) && !(next_screen_time < now)) {
                 if (duration_cast<seconds>(now - last_input_time).count() > _conf.max_seconds_idle_instruction) {
                     is_welcome = true;
                     is_instructions = false;
                     is_paused = true;
                     is_game_start = false;
                     is_player_pressed_paused = false;
-
+                    is_2_player = false;
                     curr_winner = nullptr;
+
+                    p1.active = false;
+                    p2.active = false;
                     p1.score = 0;
                     p2.score = 0;
                     p1.angle_ = 90;
                     p2.angle_ = 90+180;
                     reset_ball();
                 }
-            } else if (input_is_pause(event)) {
+            }
+            else if ((p1_pressed && !p1.active) ||  (p2_pressed && !p2.active)) {
+                is_welcome = false;
+                is_instructions = true;
+                is_paused = true;
+                is_game_start = false;
+                p1.active |= p1_pressed;
+                p2.active |= p2_pressed;
+                is_2_player = p1.active && p2.active;
+                next_screen_time = now + std::chrono::seconds(1);
+            }
+            else if ((p1_pressed && p1.active) || (p2_pressed && p2.active) || (next_screen_time < now) ) {
                 is_welcome = false;
                 is_instructions = false;
                 is_paused = true;
                 is_game_start = true;
                 game_start_time = high_resolution_clock::now();
+                p1.active |= p1_pressed;
+                p2.active |= p2_pressed;
+                is_2_player = p1.active && p2.active;
+                next_screen_time = high_resolution_clock::time_point::max();
             }
 
             return;
@@ -84,7 +118,7 @@ namespace pong {
             }
         }
 
-        if (input_is_pause(event)) {
+        if (input_is_pause_p1(event) || input_is_pause_p2(event)) {
             // If the game wasn't paused and a pause input has come -> player pressed pause is true to indicate
             // that a "RESUME" statement should be displayed.
             is_player_pressed_paused = !is_paused;
@@ -110,25 +144,29 @@ namespace pong {
             is_welcome = true;
         }
 
-        if (input_is_set(event, input_t::player_1_up) && (active_player == 1 || is_2_player) ) {
+        if (input_is_set(event, input_t::player_1_up) && (p1.active  || is_2_player) ) {
             p1.go_up();
         }
-        if (input_is_set(event, input_t::player_1_down) && (active_player == 1 || is_2_player) ) {
+        if (input_is_set(event, input_t::player_1_down) && (p1.active  || is_2_player) ) {
             p1.go_down();
         }
 
-        if (input_is_set(event, input_t::player_2_up)  && (active_player == 2 || is_2_player) ) {
+        if (input_is_set(event, input_t::player_2_up)  && (p2.active  || is_2_player) ) {
             p2.go_up();
         }
-        if (input_is_set(event, input_t::player_2_down) && (active_player == 2 || is_2_player) ) {
+        if (input_is_set(event, input_t::player_2_down) && (p2.active  || is_2_player) ) {
             p2.go_down();
         }
+        p1.active |= p1_pressed;
+        p2.active |= p2_pressed;
+        is_2_player = p1.active && p2.active;
+
 
     }
 
     void state::update_AI() {
         if (!is_2_player & !pc_cooldown & !is_paused){
-            pc_cooldown = 10;
+            pc_cooldown = 4;
             auto ball_next_pos_x = ball_pos.first , ball_next_pos_y = ball_pos.second;
             float Dist=-1;
             auto Itr = 0 ;
@@ -140,14 +178,14 @@ namespace pong {
             }
             auto ball_theta = (atan2(ball_next_pos_y , ball_next_pos_x ) * 180 / constants::PI);
             ball_theta += 360*(ball_theta<0);
-            if (active_player == 1){
+            if (p1.active){
                 if (ball_theta > 180)
                     if  (p2.angle_ - p2.angular_speed/2 > ball_theta | p2.angle_ + p2.angular_speed/2 < ball_theta){
                         if (ball_theta  > p2.angle_)
                             p2.go_up();
                         else if (p2.angle_> ball_theta)
                             p2.go_down(); }}
-            else if(active_player == 2){
+            else if(p2.active){
                 if (ball_theta < 180)
                     if  (p1.angle_ - p1.angular_speed/2 > ball_theta | p1.angle_ + p1.angular_speed/2 < ball_theta){
                         if (ball_theta  > p1.angle_)
