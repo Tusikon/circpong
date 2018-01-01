@@ -39,6 +39,7 @@ namespace pong {
 
         static int max_seconds_idle_instruction = 20;
         static int max_seconds_idle = 60;
+        static int max_seconds_game_over = 5;
     }
 }
 

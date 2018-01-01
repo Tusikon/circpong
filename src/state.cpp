@@ -118,6 +118,28 @@ namespace pong {
             }
         }
 
+        if (is_game_over) {
+            if ((now > next_screen_time)) {
+                is_game_over = false;
+                p1.score = 0;
+                p2.score = 0;
+                p1.active = false;
+                p1.active = false;
+                curr_winner = nullptr;
+                is_2_player = false;
+
+                p1.angle_ = 90;
+                p2.angle_ = 90+180;
+
+                is_paused = true;
+                is_player_pressed_paused = false;
+                is_game_start = false;
+                is_welcome = true;
+                next_screen_time = high_resolution_clock::time_point::max();
+            } else
+                return;
+        }
+
         if (input_is_pause_p1(event) || input_is_pause_p2(event)) {
             // If the game wasn't paused and a pause input has come -> player pressed pause is true to indicate
             // that a "RESUME" statement should be displayed.
@@ -128,21 +150,6 @@ namespace pong {
 
         if (is_paused)
             return;
-
-        if (is_game_over) {
-            is_game_over = false;
-            p1.score = 0;
-            p2.score = 0;
-            curr_winner = nullptr;
-
-            p1.angle_ = 90;
-            p2.angle_ = 90+180;
-
-            is_paused = true;
-            is_player_pressed_paused = false;
-            is_game_start = false;
-            is_welcome = true;
-        }
 
         if (input_is_set(event, input_t::player_1_up) && (p1.active  || is_2_player) ) {
             p1.go_up();
@@ -235,6 +242,7 @@ namespace pong {
             if (winner->score == _conf.max_score) {
                 is_game_over = true;
                 curr_winner = winner;
+                next_screen_time = high_resolution_clock::now() + std::chrono::seconds(constants::max_seconds_game_over);
             }
         }
     }
