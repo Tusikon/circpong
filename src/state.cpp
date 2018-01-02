@@ -136,7 +136,10 @@ namespace pong {
                 is_game_start = false;
                 is_welcome = true;
                 next_screen_time = high_resolution_clock::time_point::max();
-            } else
+            } else{
+                input_is_pause_p1(event);
+                input_is_pause_p2(event);
+            }
                 return;
         }
 
